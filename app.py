@@ -2,7 +2,7 @@ import os
 from xml.parsers.expat import model
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -18,50 +18,45 @@ elif not GROQ_API_KEY.startswith("gsk_"):
 
 
 
-# conversation history
+# conversation history  
 MESSAGES = []
-choice=''
-
-prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are a helpful assistant and chatbot for conversations."),
-    ("placeholder", "{chat_history}"),
-    ("human", "{input}")
-])
-
-
 try:
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are a helpful assistant and chatbot for conversations."),
+        ("placeholder", "{chat_history}"),
+        ("human", "{input}")
+    ])
+
     llm = ChatGroq(
         model="llama-3.3-70b-versatile",
         temperature=0.7,
-        max_tokens=None,
-        timeout=None,
-        max_retries=2,
     )
-    while(True):
-        if(choice.lower()=='exit'):break
-        
-        answer_response=""
-        # response=llm.invoke("Hey hi how are you?")
-        # print(response.content)
-        # user_query="How to stream (tokens must be displayed one after another) in langchain?"
-        user_query = input("user: ")
+
+
+    while True:
+        user_query = input("USER : ")
+
+        if user_query.lower() == "exit":
+            break
 
         formatted_prompt = prompt.format_messages(
             chat_history=MESSAGES,
             input=user_query
         )
 
-        MESSAGES.append({'role':'User','content:':user_query})
-        print("\nLLM: \n")
+        print("\nLLM :\n")
+
+        answer_response = ""
+
         for chunk in llm.stream(formatted_prompt):
-            print(chunk.text, end="", flush=True)
-            answer_response+=chunk.text
+            print(chunk.content, end="", flush=True)
+            answer_response += chunk.content
 
-
+        MESSAGES.append({'role':'user','content':user_query})
         MESSAGES.append({'role':'assistant','content':answer_response})
-        print("\n----Debug----\n ",MESSAGES)
 
-        choice=input("Enter exit for terminating or enter for continue :")
+        print(f"\n\n----Debug History Size: {len(MESSAGES)} messages----")
+
 
 
 except Exception as e:
