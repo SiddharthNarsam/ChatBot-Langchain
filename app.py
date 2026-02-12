@@ -1,5 +1,4 @@
 import os
-from xml.parsers.expat import model
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
@@ -15,43 +14,37 @@ if not GROQ_API_KEY:
 elif not GROQ_API_KEY.startswith("gsk_"):
     print("⚠️ Warning: Your API key doesn't start with 'gsk_'. It might be invalid.")
 
-def Generate_Summary():
-    summary_prompt = f"""
-            I am giving you the list of conversations (chat history).
-            Please summarize:
-
-            1) System/Assistant responses
-            2) Human/User inputs
-
-            First give system summary.
-            Then use '***' as separator.
-            Then give human summary.
-
-            Chat History:
-            {MESSAGES}
-            """
-    response = llm.invoke(summary_prompt)
-    summary_output=response.content
-
-    system_summary, human_summary = summary_output.split("***")
-
-    system_summary = system_summary.strip()
-    human_summary = human_summary.strip()
-
-    print(f"\n\n Note: ---- Summary Generated ----")
-    # print("Human Summary:\n", human_summary)
-    # print("System Summary:\n", system_summary)
-
-
-
-
-
-# conversation history  
 MESSAGES = []
+CURRENT_SUMMARY = ""
+
+
+def Generate_Summary():
+    global MESSAGES, CURRENT_SUMMARY
+    
+    # We ask the LLM to merge the old summary with the new messages
+    summary_prompt = f"""
+    Current Summary: {CURRENT_SUMMARY}
+    
+    New Conversation to add:
+    {MESSAGES}
+    
+    Please provide a new, updated summary that captures the key points of the 
+    entire conversation so far. Be concise.
+    """
+    
+    response = llm.invoke(summary_prompt)
+    CURRENT_SUMMARY = response.content
+    
+    # Clear history after summarizing to save space/tokens
+    MESSAGES = [] 
+    print(f"\n--- ✨ Summary Updated & History Cleared ---")
+
+
+
+
 try:
     prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are a helpful assistant and chatbot for conversations."),
-        ("placeholder", "{chat_history}"),
+        ("system", "You are a helpful assistant. Previous context: {summary}"),
         ("human", "{input}")
     ])
 
@@ -68,11 +61,11 @@ try:
             break
 
         formatted_prompt = prompt.format_messages(
-            chat_history=MESSAGES,
+            summary=CURRENT_SUMMARY,
             input=user_query
         )
 
-        print("\nLLM :\n")
+        print("\nLLM :", end="")
 
         answer_response = ""
 
@@ -80,10 +73,10 @@ try:
             print(chunk.content, end="", flush=True)
             answer_response += chunk.content
 
-        MESSAGES.append({'role':'user','content':user_query})
+        MESSAGES.append({'role':'human','content':user_query})
         MESSAGES.append({'role':'assistant','content':answer_response})
 
-        if len(MESSAGES)==6:
+        if len(MESSAGES)>=6:
             Generate_Summary()
 
 
