@@ -15,6 +15,34 @@ if not GROQ_API_KEY:
 elif not GROQ_API_KEY.startswith("gsk_"):
     print("⚠️ Warning: Your API key doesn't start with 'gsk_'. It might be invalid.")
 
+def Generate_Summary():
+    summary_prompt = f"""
+            I am giving you the list of conversations (chat history).
+            Please summarize:
+
+            1) System/Assistant responses
+            2) Human/User inputs
+
+            First give system summary.
+            Then use '***' as separator.
+            Then give human summary.
+
+            Chat History:
+            {MESSAGES}
+            """
+    response = llm.invoke(summary_prompt)
+    summary_output=response.content
+
+    system_summary, human_summary = summary_output.split("***")
+
+    system_summary = system_summary.strip()
+    human_summary = human_summary.strip()
+
+    print(f"\n\n Note: ---- Summary Generated ----")
+    # print("Human Summary:\n", human_summary)
+    # print("System Summary:\n", system_summary)
+
+
 
 
 
@@ -54,6 +82,10 @@ try:
 
         MESSAGES.append({'role':'user','content':user_query})
         MESSAGES.append({'role':'assistant','content':answer_response})
+
+        if len(MESSAGES)==6:
+            Generate_Summary()
+
 
         print(f"\n\n----Debug History Size: {len(MESSAGES)} messages----")
 
