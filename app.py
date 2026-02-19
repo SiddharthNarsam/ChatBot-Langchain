@@ -37,14 +37,18 @@ def Generate_Summary():
     
     # Clear history after summarizing to save space/tokens
     MESSAGES = [] 
-    print(f"\n--- ✨ Summary Updated & History Cleared ---")
+    print(f"\n\n--- ✨ Summary Updated & History Cleared ---")
+    print("----------------------------------------------------------------------------")
+    print(CURRENT_SUMMARY)
+    print("----------------------------------------------------------------------------\n")
+
 
 
 
 
 try:
     prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are a helpful assistant. Previous context: {summary}"),
+        ("system", "You are a helpful assistant and a good conversational Chatbot. Previous context: {summary}"),
         ("human", "{input}")
     ])
 
@@ -76,7 +80,7 @@ try:
         MESSAGES.append({'role':'human','content':user_query})
         MESSAGES.append({'role':'assistant','content':answer_response})
 
-        if len(MESSAGES)>=6:
+        if len(MESSAGES)>=10:
             Generate_Summary()
 
 
